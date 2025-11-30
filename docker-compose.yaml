@@ -11,7 +11,7 @@ services:
     depends_on:
       - server
     networks:
-      - app-network
+      - coolify
 
   # Node.js Backend (Express)
   server:
@@ -38,11 +38,11 @@ services:
     volumes:
       - uploads-data:/app/public/uploads
     networks:
-      - app-network
+      - coolify
 
 networks:
-  app-network:
-    driver: bridge
+  coolify:
+    external: true
 
 volumes:
   uploads-data:
