@@ -9,3 +9,17 @@ export const getApiUrl = (path: string): string => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${API_BASE_URL}${normalizedPath}`;
 };
+
+// Check if we're making cross-origin requests (production with separate domains)
+export const isCrossOrigin = (): boolean => {
+  return API_BASE_URL !== '' && !API_BASE_URL.startsWith(window.location.origin);
+};
+
+// Default fetch options for API calls
+export const getFetchOptions = (options: RequestInit = {}): RequestInit => {
+  const baseOptions: RequestInit = {
+    ...options,
+    credentials: isCrossOrigin() ? 'include' : 'same-origin',
+  };
+  return baseOptions;
+};

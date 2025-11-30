@@ -38,7 +38,23 @@ if (!mongoUri) {
     .catch(err => console.error('MongoDB connection error:', err));
 }
 
-app.use(cors());
+// CORS configuration for cross-origin requests with credentials
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    // In production, you may want to restrict this
+    if (!origin) return callback(null, true);
+    
+    // Allow all origins in development, or specific origins in production
+    // The client domain will be different from the server domain in Coolify
+    callback(null, true);
+  },
+  credentials: true, // Allow cookies to be sent cross-origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '5mb' }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'fallback_secret_key_please_change',
@@ -47,7 +63,8 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Required for cross-origin cookies
   }
 }));
 
