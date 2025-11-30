@@ -6,8 +6,8 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - server
     networks:
@@ -18,8 +18,8 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    ports:
-      - "3889:3889"
+    expose:
+      - "3889"
     environment:
       - SERVER_PORT=3889
       - MONGODB_URI=${MONGODB_URI}
