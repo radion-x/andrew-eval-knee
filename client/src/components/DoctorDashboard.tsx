@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';\nimport { getApiUrl } from '../config/api';
+import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '../config/api';
 
 // Define interfaces for our data structures
 interface User {
