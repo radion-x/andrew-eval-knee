@@ -467,19 +467,28 @@ app.post('/api/email/send-assessment', async (req, res) => {
 // --- NODEMAILER & SERVER START ---
 let transporter;
 if (process.env.MAILGUN_SMTP_LOGIN && process.env.MAILGUN_SMTP_PASSWORD) {
+  const smtpPort = parseInt(process.env.MAILGUN_SMTP_PORT || "465", 10);
+  
   transporter = nodemailer.createTransport({
-    host: process.env.MAILGUN_SMTP_SERVER,
-    port: parseInt(process.env.MAILGUN_SMTP_PORT || "587", 10),
-    secure: parseInt(process.env.MAILGUN_SMTP_PORT || "587", 10) === 465,
+    host: process.env.MAILGUN_SMTP_SERVER || 'smtp.mailgun.org',
+    port: smtpPort,
+    secure: smtpPort === 465, // true for 465 (SSL), false for 587 (STARTTLS)
     auth: {
       user: process.env.MAILGUN_SMTP_LOGIN,
       pass: process.env.MAILGUN_SMTP_PASSWORD,
     },
+    connectionTimeout: 30000, // 30 seconds
+    greetingTimeout: 30000,
+    socketTimeout: 60000,
+    pool: true, // Use connection pooling
+    maxConnections: 3,
+    maxMessages: 100,
   });
 
   transporter.verify((error, success) => {
     if (error) {
       console.error('Nodemailer transporter verification error:', error);
+      console.log('Email sending may not work. Check SMTP settings and firewall.');
     } else {
       console.log('Nodemailer transporter is ready to send emails.');
     }
