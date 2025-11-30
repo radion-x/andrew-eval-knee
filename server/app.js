@@ -2,13 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const { Anthropic } = require('@anthropic-ai/sdk');
 const mongoose = require('mongoose');
-const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
 const http = require('http');
 const https = require('https');
+const FormData = require('form-data');
+const Mailgun = require('mailgun.js');
 const { generateComprehensivePrompt } = require('./prompt-builder.js');
 require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
 
@@ -387,7 +388,7 @@ app.post('/api/generate-summary', async (req, res) => {
   }
 });
 app.post('/api/email/send-assessment', async (req, res) => {
-  if (!transporter) {
+  if (!mailgunClient || !mailgunDomain) {
     return res.status(503).json({ error: 'Email service is not configured or unavailable.' });
   }
 
@@ -408,93 +409,92 @@ app.post('/api/email/send-assessment', async (req, res) => {
     const patientEmail = formData.demographics?.email;
     const subjectDate = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-    // Send email to admin/BCC
+    // Prepare attachments for Mailgun
     const attachments = [];
+    const inlineImages = [];
+    
     if (formData.painMapImageFront) {
       const frontImagePath = path.join(baseAssessmentFilesDir, formData.painMapImageFront);
       if (fs.existsSync(frontImagePath)) {
-        attachments.push({
+        const fileData = fs.readFileSync(frontImagePath);
+        inlineImages.push({
           filename: 'painMapFront.png',
-          path: frontImagePath,
-          cid: 'painMapFront'
+          data: fileData
         });
       }
     }
     if (formData.painMapImageBack) {
       const backImagePath = path.join(baseAssessmentFilesDir, formData.painMapImageBack);
       if (fs.existsSync(backImagePath)) {
-        attachments.push({
+        const fileData = fs.readFileSync(backImagePath);
+        inlineImages.push({
           filename: 'painMapBack.png',
-          path: backImagePath,
-          cid: 'painMapBack'
+          data: fileData
         });
       }
     }
 
     // Send email to admin/BCC
     const adminHtmlContent = generateAssessmentEmailHTML({ formData, aiSummary, recommendationText: formData.systemRecommendation, nextStep: formData.nextStep }, serverBaseUrl, 'admin');
-    const adminMailOptions = {
-      from: `"Hip & Knee IQ Assessment" <${process.env.EMAIL_SENDER_ADDRESS}>`,
-      to: primaryRecipient,
-      bcc: process.env.BCC_EMAIL_RECIPIENT_ADDRESS,
+    
+    const adminMessageData = {
+      from: `Hip & Knee IQ Assessment <${process.env.EMAIL_SENDER_ADDRESS}>`,
+      to: [primaryRecipient],
       subject: `Hip & Knee Assessment Summary - ${formData.demographics?.fullName || 'N/A'} - ${subjectDate}`,
       html: adminHtmlContent,
-      attachments: attachments
     };
-    await transporter.sendMail(adminMailOptions);
+    
+    // Add BCC if configured
+    if (process.env.BCC_EMAIL_RECIPIENT_ADDRESS) {
+      adminMessageData.bcc = process.env.BCC_EMAIL_RECIPIENT_ADDRESS;
+    }
+    
+    // Add inline images if available
+    if (inlineImages.length > 0) {
+      adminMessageData.inline = inlineImages;
+    }
+    
+    console.log('Sending admin email via Mailgun API...');
+    await mailgunClient.messages.create(mailgunDomain, adminMessageData);
+    console.log('Admin email sent successfully.');
 
     // Send email to patient
     if (patientEmail && typeof patientEmail === 'string' && patientEmail.trim() !== '' && patientEmail !== primaryRecipient) {
       const patientHtmlContent = generateAssessmentEmailHTML({ formData, aiSummary, recommendationText: formData.systemRecommendation, nextStep: formData.nextStep }, serverBaseUrl, 'patient');
-      const patientMailOptions = {
-        from: `"Hip & Knee IQ Assessment" <${process.env.EMAIL_SENDER_ADDRESS}>`,
-        to: patientEmail,
+      
+      const patientMessageData = {
+        from: `Hip & Knee IQ Assessment <${process.env.EMAIL_SENDER_ADDRESS}>`,
+        to: [patientEmail],
         subject: `Your Hip & Knee Assessment Summary - ${subjectDate}`,
         html: patientHtmlContent,
-        // No attachments for the patient email
       };
-      await transporter.sendMail(patientMailOptions);
+      
+      console.log('Sending patient email via Mailgun API...');
+      await mailgunClient.messages.create(mailgunDomain, patientMessageData);
+      console.log('Patient email sent successfully.');
     }
 
     res.status(200).json({ message: 'Assessment email(s) sent successfully.' });
 
   } catch (error) {
     console.error('Error sending assessment email:', error);
-    res.status(500).json({ error: 'Failed to send assessment email.' });
+    res.status(500).json({ error: 'Failed to send assessment email: ' + (error.message || 'Unknown error') });
   }
 });
 
-// --- NODEMAILER & SERVER START ---
-let transporter;
-if (process.env.MAILGUN_SMTP_LOGIN && process.env.MAILGUN_SMTP_PASSWORD) {
-  const smtpPort = parseInt(process.env.MAILGUN_SMTP_PORT || "465", 10);
-  
-  transporter = nodemailer.createTransport({
-    host: process.env.MAILGUN_SMTP_SERVER || 'smtp.mailgun.org',
-    port: smtpPort,
-    secure: smtpPort === 465, // true for 465 (SSL), false for 587 (STARTTLS)
-    auth: {
-      user: process.env.MAILGUN_SMTP_LOGIN,
-      pass: process.env.MAILGUN_SMTP_PASSWORD,
-    },
-    connectionTimeout: 30000, // 30 seconds
-    greetingTimeout: 30000,
-    socketTimeout: 60000,
-    pool: true, // Use connection pooling
-    maxConnections: 3,
-    maxMessages: 100,
-  });
+// --- MAILGUN API CLIENT ---
+let mailgunClient;
+const mailgunDomain = process.env.MAILGUN_DOMAIN;
 
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error('Nodemailer transporter verification error:', error);
-      console.log('Email sending may not work. Check SMTP settings and firewall.');
-    } else {
-      console.log('Nodemailer transporter is ready to send emails.');
-    }
+if (process.env.MAILGUN_API_KEY && mailgunDomain) {
+  const mailgun = new Mailgun(FormData);
+  mailgunClient = mailgun.client({
+    username: 'api',
+    key: process.env.MAILGUN_API_KEY,
   });
+  console.log(`Mailgun API client initialized for domain: ${mailgunDomain}`);
 } else {
-  console.warn('Mailgun SMTP credentials not fully set in .env. Email sending will be disabled.');
+  console.warn('Mailgun API credentials not set (MAILGUN_API_KEY and MAILGUN_DOMAIN required). Email sending will be disabled.');
 }
 
 // --- SERVER START ---
