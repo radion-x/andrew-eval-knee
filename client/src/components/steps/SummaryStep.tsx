@@ -125,22 +125,22 @@ const SummaryStep: React.FC = () => {
       const currentFormData = formDataRef.current;
       const currentContextAiSummary = contextAiSummaryRef.current;
       
-      // Ensure imaging data has properly formatted spinal regions as arrays
+      // Ensure imaging data has properly formatted joint regions as arrays
       const processedFormData = {
         ...currentFormData,
         imaging: currentFormData.imaging.map(img => {
-          // Ensure spinalRegions is always an array
-          if (img.spinalRegions && !Array.isArray(img.spinalRegions)) {
+          // Ensure jointRegions is always an array
+          if (img.jointRegions && !Array.isArray(img.jointRegions)) {
             return {
               ...img,
-              spinalRegions: [img.spinalRegions]
+              jointRegions: [img.jointRegions]
             };
           }
           // Make sure it has a default value if empty
-          if (!img.spinalRegions) {
+          if (!img.jointRegions) {
             return {
               ...img, 
-              spinalRegions: [] // Use empty array as default - user selections will come through if set
+              jointRegions: [] // Use empty array as default - user selections will come through if set
             };
           }
           return img;
@@ -166,9 +166,9 @@ const SummaryStep: React.FC = () => {
           hadStudy: img.hadStudy,
           clinic: img.clinic,
           date: img.date,
-          spinalRegions: img.spinalRegions,
-          spinalRegionsType: typeof img.spinalRegions,
-          spinalRegionsIsArray: Array.isArray(img.spinalRegions)
+          jointRegions: img.jointRegions,
+          jointRegionsType: typeof img.jointRegions,
+          jointRegionsIsArray: Array.isArray(img.jointRegions)
         });
       });
       console.log("==========================================");
@@ -336,28 +336,12 @@ const SummaryStep: React.FC = () => {
       }
     };
 
-    if (redFlags.muscleWeakness?.present && redFlags.muscleWeakness.areas) {
-      const selectedAreas = Object.entries(redFlags.muscleWeakness.areas)
-        .filter(([, areaDetail]: [string, { selected: boolean; severity?: number }]) => areaDetail.selected)
-        .map(([areaName]) => areaName);
-      if (selectedAreas.length > 0) {
-        addFlagItem('Muscle Weakness', true, selectedAreas.join(', '));
-      } else {
-         addFlagItem('Muscle Weakness', true, "Present, no specific areas detailed.");
-      }
+    // Fevers
+    if (redFlags.fevers?.present) {
+      addFlagItem('Fevers', true);
     }
 
-    if (redFlags.numbnessOrTingling?.present && redFlags.numbnessOrTingling.areas) {
-      const selectedAreas = Object.entries(redFlags.numbnessOrTingling.areas)
-        .filter(([, areaDetail]: [string, { selected: boolean; severity?: number }]) => areaDetail.selected)
-        .map(([areaName]) => areaName);
-      if (selectedAreas.length > 0) {
-        addFlagItem('Numbness Or Tingling', true, selectedAreas.join(', '));
-      } else {
-        addFlagItem('Numbness Or Tingling', true, "Present, no specific areas detailed.");
-      }
-    }
-
+    // Unexplained Weight Loss
     if (redFlags.unexplainedWeightLoss?.present) {
       let uwlDetails = '';
       if (redFlags.unexplainedWeightLoss.amountKg) uwlDetails += `Amount: ${redFlags.unexplainedWeightLoss.amountKg}kg`;
@@ -365,29 +349,24 @@ const SummaryStep: React.FC = () => {
       addFlagItem('Unexplained Weight Loss', true, uwlDetails || "Details not specified");
     }
 
-    if (redFlags.bladderOrBowelIncontinence?.present) {
-      let bbDetails = '';
-      if (redFlags.bladderOrBowelIncontinence.details) {
-        bbDetails += `Type: ${redFlags.bladderOrBowelIncontinence.details}`;
-      }
-      if (redFlags.bladderOrBowelIncontinence.isNewOnset) {
-        bbDetails += `${bbDetails ? '; ' : ''}New Onset`;
-      }
-      addFlagItem('Bladder Or Bowel Incontinence', true, bbDetails || "Details not specified");
+    // Night Pain
+    if (redFlags.nightPain?.present) {
+      addFlagItem('Night Pain', true, "Pain that wakes from sleep");
     }
 
-    if (redFlags.saddleAnaesthesia?.present) {
-      let saDetails = '';
-      if (redFlags.saddleAnaesthesia.details) {
-        saDetails += `Area: ${redFlags.saddleAnaesthesia.details}`;
+    // Weakness
+    if (redFlags.weakness?.present && redFlags.weakness.areas) {
+      const selectedAreas = Object.entries(redFlags.weakness.areas)
+        .filter(([, areaDetail]: [string, { selected: boolean }]) => areaDetail.selected)
+        .map(([areaName]) => areaName);
+      if (selectedAreas.length > 0) {
+        addFlagItem('Weakness', true, selectedAreas.join(', '));
+      } else {
+        addFlagItem('Weakness', true, "Present, no specific areas detailed.");
       }
-      addFlagItem('Saddle Anaesthesia', true, saDetails || "Details not specified");
     }
 
-    if (redFlags.balanceProblems?.present && redFlags.balanceProblems.type && redFlags.balanceProblems.type !== 'My balance feels normal') {
-       addFlagItem('Balance Problems', true, redFlags.balanceProblems.type);
-    }
-
+    // Other Red Flags
     if (redFlags.otherRedFlagPresent && redFlags.otherRedFlag && redFlags.otherRedFlag.trim() !== '') {
       reportedItems.push(<li key="otherRedFlag" className={listItemBaseClass}>Other Red Flags: {redFlags.otherRedFlag}</li>);
     }
@@ -485,14 +464,29 @@ const SummaryStep: React.FC = () => {
             <div className={cardContentBaseClass}>
               {(Object.values(formDataRef.current.diagnoses).some(val => val === true || (typeof val === 'string' && val.length > 0))) ? (
                 <ul className="list-disc list-inside space-y-1">
-                  {formDataRef.current.diagnoses.herniatedDisc && <li className={listItemBaseClass}>Herniated Disc</li>}
-                  {formDataRef.current.diagnoses.spinalStenosis && <li className={listItemBaseClass}>Spinal Stenosis</li>}
-                  {formDataRef.current.diagnoses.spondylolisthesis && <li className={listItemBaseClass}>Spondylolisthesis</li>}
-                  {formDataRef.current.diagnoses.scoliosis && <li className={listItemBaseClass}>Scoliosis</li>}
-                  {formDataRef.current.diagnoses.spinalFracture && <li className={listItemBaseClass}>Spinal Fracture</li>}
-                  {formDataRef.current.diagnoses.degenerativeDiscDisease && <li className={listItemBaseClass}>Degenerative Disc Disease</li>}
-                  {formDataRef.current.diagnoses.otherConditionSelected && formDataRef.current.diagnoses.other && <li className={listItemBaseClass}>Other: {formDataRef.current.diagnoses.other}</li>}
-                  {!formDataRef.current.diagnoses.otherConditionSelected && formDataRef.current.diagnoses.other && <li className={listItemBaseClass}>Other (not primary): {formDataRef.current.diagnoses.other}</li>}
+                  {/* Hip Diagnoses */}
+                  {formDataRef.current.diagnoses.hipOsteoarthritis && <li className={listItemBaseClass}>Hip Osteoarthritis</li>}
+                  {formDataRef.current.diagnoses.hipRheumatoidArthritis && <li className={listItemBaseClass}>Hip Rheumatoid Arthritis</li>}
+                  {formDataRef.current.diagnoses.labralTear && <li className={listItemBaseClass}>Labral Tear</li>}
+                  {formDataRef.current.diagnoses.trochantericBursitis && <li className={listItemBaseClass}>Trochanteric Bursitis</li>}
+                  {formDataRef.current.diagnoses.glutealTendonTear && <li className={listItemBaseClass}>Gluteal Tendon Tear</li>}
+                  {formDataRef.current.diagnoses.hipStressFracture && <li className={listItemBaseClass}>Hip Stress Fracture</li>}
+                  {formDataRef.current.diagnoses.avascularNecrosis && <li className={listItemBaseClass}>Avascular Necrosis</li>}
+                  {formDataRef.current.diagnoses.hipDysplasia && <li className={listItemBaseClass}>Hip Dysplasia</li>}
+                  {formDataRef.current.diagnoses.otherHipConditionSelected && formDataRef.current.diagnoses.otherHipCondition && <li className={listItemBaseClass}>Other Hip Condition: {formDataRef.current.diagnoses.otherHipCondition}</li>}
+                  
+                  {/* Knee Diagnoses */}
+                  {formDataRef.current.diagnoses.kneeOsteoarthritis && <li className={listItemBaseClass}>Knee Osteoarthritis</li>}
+                  {formDataRef.current.diagnoses.kneeRheumatoidArthritis && <li className={listItemBaseClass}>Knee Rheumatoid Arthritis</li>}
+                  {formDataRef.current.diagnoses.aclRupture && <li className={listItemBaseClass}>ACL Rupture</li>}
+                  {formDataRef.current.diagnoses.otherLigamentInjury && <li className={listItemBaseClass}>Other Ligament Injury{formDataRef.current.diagnoses.otherLigamentInjuryDetails ? `: ${formDataRef.current.diagnoses.otherLigamentInjuryDetails}` : ''}</li>}
+                  {formDataRef.current.diagnoses.patellaInstability && <li className={listItemBaseClass}>Patella Instability/Dislocation</li>}
+                  {formDataRef.current.diagnoses.meniscalTear && <li className={listItemBaseClass}>Meniscal Tear</li>}
+                  {formDataRef.current.diagnoses.kneeFracture && <li className={listItemBaseClass}>Knee Fracture</li>}
+                  {formDataRef.current.diagnoses.kneeTendinitis && <li className={listItemBaseClass}>Knee Tendinitis</li>}
+                  {formDataRef.current.diagnoses.otherKneeConditionSelected && formDataRef.current.diagnoses.otherKneeCondition && <li className={listItemBaseClass}>Other Knee Condition: {formDataRef.current.diagnoses.otherKneeCondition}</li>}
+                  
+                  {/* Symptom Details */}
                   {formDataRef.current.diagnoses.mainSymptoms && <li className={`${listItemBaseClass} mt-2`}><span className="font-medium">Main Symptoms:</span> {formDataRef.current.diagnoses.mainSymptoms}</li>}
                   {formDataRef.current.diagnoses.symptomDuration && <li className={listItemBaseClass}><span className="font-medium">Symptom Duration:</span> {formDataRef.current.diagnoses.symptomDuration}</li>}
                   {formDataRef.current.diagnoses.symptomProgression && <li className={listItemBaseClass}><span className="font-medium">Symptom Progression:</span> {formDataRef.current.diagnoses.symptomProgression}</li>}
@@ -505,22 +499,21 @@ const SummaryStep: React.FC = () => {
             <div className={cardContentBaseClass}>
               <div className="mb-3">
                 <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-1">Non-Surgical Treatments:</h4>
-                {Object.entries(formDataRef.current.treatments).filter(([key, value]) => !key.includes('Name') && !key.includes('Details') && value === true).length > 0 ? (
+                {Object.entries(formDataRef.current.treatments).filter(([key, value]) => !key.includes('Name') && !key.includes('Details') && !key.includes('Types') && value === true).length > 0 ? (
                   <ul className="list-disc list-inside space-y-1">
-                    {Object.entries(formDataRef.current.treatments).map(([key, value]) => {
-                      if (key.includes('Name') || key.includes('Details') || value !== true) return null;
-                      const readableKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                      let details = '';
-                      if (key === 'prescriptionAntiInflammatory' && formDataRef.current.treatments.prescriptionAntiInflammatoryName) details = `: ${formDataRef.current.treatments.prescriptionAntiInflammatoryName}`;
-                      else if (key === 'prescriptionPainMedication' && formDataRef.current.treatments.prescriptionPainMedicationName) details = `: ${formDataRef.current.treatments.prescriptionPainMedicationName}`;
-                      else if (key === 'spinalInjections' && formDataRef.current.treatments.spinalInjectionsDetails) details = `: ${formDataRef.current.treatments.spinalInjectionsDetails}`;
-                      return <li key={key} className={listItemBaseClass}>{readableKey}{details}</li>;
-                    })}
+                    {formDataRef.current.treatments.overTheCounterMedication && <li className={listItemBaseClass}>Over-the-Counter Medication</li>}
+                    {formDataRef.current.treatments.prescriptionAntiInflammatory && <li className={listItemBaseClass}>Prescription Anti-Inflammatory{formDataRef.current.treatments.prescriptionAntiInflammatoryName ? `: ${formDataRef.current.treatments.prescriptionAntiInflammatoryName}` : ''}</li>}
+                    {formDataRef.current.treatments.prescriptionPainMedication && <li className={listItemBaseClass}>Prescription Pain Medication{formDataRef.current.treatments.prescriptionPainMedicationName ? `: ${formDataRef.current.treatments.prescriptionPainMedicationName}` : ''}</li>}
+                    {formDataRef.current.treatments.injections && <li className={listItemBaseClass}>Injections{formDataRef.current.treatments.injectionTypes && formDataRef.current.treatments.injectionTypes.length > 0 ? `: ${formDataRef.current.treatments.injectionTypes.join(', ')}` : ''}</li>}
+                    {formDataRef.current.treatments.radiofrequencyAblation && <li className={listItemBaseClass}>Radiofrequency Ablation</li>}
+                    {formDataRef.current.treatments.physiotherapy && <li className={listItemBaseClass}>Physiotherapy</li>}
+                    {formDataRef.current.treatments.chiropracticTreatment && <li className={listItemBaseClass}>Chiropractic Treatment</li>}
+                    {formDataRef.current.treatments.osteopathyMyotherapy && <li className={listItemBaseClass}>Osteopathy/Myotherapy</li>}
                   </ul>
                 ) : ( <p>No non-surgical treatments reported.</p> )}
               </div>
               <div>
-                <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-1">Surgical History:</h4>
+                <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-1">Hip/Knee Surgery History:</h4>
                 {formDataRef.current.hadSurgery && formDataRef.current.surgeries.length > 0 ? (
                   <ul className="list-disc list-inside space-y-1">
                     {formDataRef.current.surgeries.map((surgery, index) => (<li key={index} className={listItemBaseClass}> {surgery.procedure} ({formatDate(surgery.date)})</li>))}
@@ -537,9 +530,9 @@ const SummaryStep: React.FC = () => {
                   {formDataRef.current.imaging.filter(img => img.hadStudy).map((img, index) => (
                     <li key={index} className={listItemBaseClass}>
                       {img.type} {img.date && `(${formatDate(img.date)})`} {img.clinic && ` at ${img.clinic}`}
-                      {img.spinalRegions && img.spinalRegions.length > 0 && (
+                      {img.jointRegions && img.jointRegions.length > 0 && (
                         <span className="ml-2">
-                          <span className="font-medium">Regions:</span> {img.spinalRegions.join(', ')}
+                          <span className="font-medium">Regions:</span> {img.jointRegions.join(', ')}
                         </span>
                       )}
                       {img.documentName && (

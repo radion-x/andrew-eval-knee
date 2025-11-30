@@ -4,25 +4,25 @@ import { useFormContext } from '../../context/FormContext';
 const ClinicalHistoryStep: React.FC = () => {
   const { formData, updateFormData } = useFormContext();
 
-  // Adjusted to handle predefined conditions and the 'otherConditionSelected' flag
   const handleDiagnosisChange = (
-    diagnosisKey: keyof Pick<typeof formData.diagnoses, 
-      'herniatedDisc' | 
-      'spinalStenosis' | 
-      'spondylolisthesis' | 
-      'scoliosis' | 
-      'spinalFracture' | 
-      'degenerativeDiscDisease' |
-      'otherConditionSelected'>, // Added otherConditionSelected
+    diagnosisKey: string,
     value: boolean
   ) => {
     const newDiagnoses = {
       ...formData.diagnoses,
       [diagnosisKey]: value,
     };
-    // If 'Other' is being set to No, clear the 'other' text field
-    if (diagnosisKey === 'otherConditionSelected' && !value) {
-      newDiagnoses.other = '';
+    // If 'Other Hip' is being set to No, clear the text field
+    if (diagnosisKey === 'otherHipConditionSelected' && !value) {
+      newDiagnoses.otherHipCondition = '';
+    }
+    // If 'Other Knee' is being set to No, clear the text field
+    if (diagnosisKey === 'otherKneeConditionSelected' && !value) {
+      newDiagnoses.otherKneeCondition = '';
+    }
+    // If 'Other Ligament Injury' is being set to No, clear the details
+    if (diagnosisKey === 'otherLigamentInjury' && !value) {
+      newDiagnoses.otherLigamentInjuryDetails = '';
     }
     updateFormData({ diagnoses: newDiagnoses });
   };
@@ -56,13 +56,123 @@ const ClinicalHistoryStep: React.FC = () => {
     });
   };
 
-  const handleOtherDiagnosisChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleOtherTextChange = (field: 'otherHipCondition' | 'otherKneeCondition' | 'otherLigamentInjuryDetails', value: string) => {
     updateFormData({
       diagnoses: {
         ...formData.diagnoses,
-        other: e.target.value
+        [field]: value
       }
     });
+  };
+
+  // Hip Diagnoses
+  const hipConditions = [
+    { id: 'hipOsteoarthritis', label: 'Hip Osteoarthritis' },
+    { id: 'hipRheumatoidArthritis', label: 'Rheumatoid Arthritis' },
+    { id: 'labralTear', label: 'Labral Tear' },
+    { id: 'trochantericBursitis', label: 'Trochanteric Bursitis' },
+    { id: 'glutealTendonTear', label: 'Gluteal Tendon Tear' },
+    { id: 'hipStressFracture', label: 'Stress Fracture' },
+    { id: 'avascularNecrosis', label: 'Avascular Necrosis' },
+    { id: 'hipDysplasia', label: 'Hip Dysplasia' },
+    { id: 'otherHipConditionSelected', label: 'Other Hip Condition' },
+  ];
+
+  // Knee Diagnoses
+  const kneeConditions = [
+    { id: 'kneeOsteoarthritis', label: 'Knee Osteoarthritis' },
+    { id: 'kneeRheumatoidArthritis', label: 'Rheumatoid Arthritis' },
+    { id: 'aclRupture', label: 'ACL Rupture' },
+    { id: 'otherLigamentInjury', label: 'Other Ligament Injury (Specify)' },
+    { id: 'patellaInstability', label: 'Patella Instability / Dislocation' },
+    { id: 'meniscalTear', label: 'Meniscal Tear' },
+    { id: 'kneeFracture', label: 'Fracture' },
+    { id: 'kneeTendinitis', label: 'Tendinitis' },
+    { id: 'otherKneeConditionSelected', label: 'Other Knee Condition' },
+  ];
+
+  const renderConditionItem = (condition: { id: string; label: string }, category: 'hip' | 'knee') => {
+    const diagnosisKey = condition.id as keyof typeof formData.diagnoses;
+    const isChecked = formData.diagnoses[diagnosisKey] === true;
+
+    return (
+      <React.Fragment key={condition.id}>
+        <div className="flex flex-col sm:flex-row sm:items-center p-3 border rounded-md hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors">
+          <div className="font-medium text-slate-800 dark:text-gray-200 flex-1 mb-2 sm:mb-0">{condition.label}</div>
+          <div className="flex space-x-4">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name={`diagnosis-${condition.id}`}
+                className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700"
+                checked={isChecked}
+                onChange={() => handleDiagnosisChange(diagnosisKey, true)}
+              />
+              <span className="ml-2 text-slate-700 dark:text-gray-300">Yes</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name={`diagnosis-${condition.id}`}
+                className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700"
+                checked={!isChecked}
+                onChange={() => handleDiagnosisChange(diagnosisKey, false)}
+              />
+              <span className="ml-2 text-slate-700 dark:text-gray-300">No</span>
+            </label>
+          </div>
+        </div>
+        
+        {/* Show text input for "Other Ligament Injury" */}
+        {condition.id === 'otherLigamentInjury' && formData.diagnoses.otherLigamentInjury && (
+          <div className="mt-2 mb-4 pl-4">
+            <label htmlFor="otherLigamentInjuryDetails" className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+              Please specify the ligament injury:
+            </label>
+            <input
+              type="text"
+              id="otherLigamentInjuryDetails"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., PCL, MCL, LCL injury..."
+              value={formData.diagnoses.otherLigamentInjuryDetails || ''}
+              onChange={(e) => handleOtherTextChange('otherLigamentInjuryDetails', e.target.value)}
+            />
+          </div>
+        )}
+        
+        {/* Show text area for "Other Hip Condition" */}
+        {condition.id === 'otherHipConditionSelected' && formData.diagnoses.otherHipConditionSelected && (
+          <div className="mt-2 mb-4 pl-4">
+            <label htmlFor="otherHipConditionText" className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+              Please specify other hip condition(s):
+            </label>
+            <textarea
+              id="otherHipConditionText"
+              className="w-full h-20 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Describe other hip conditions here..."
+              value={formData.diagnoses.otherHipCondition || ''}
+              onChange={(e) => handleOtherTextChange('otherHipCondition', e.target.value)}
+            />
+          </div>
+        )}
+        
+        {/* Show text area for "Other Knee Condition" */}
+        {condition.id === 'otherKneeConditionSelected' && formData.diagnoses.otherKneeConditionSelected && (
+          <div className="mt-2 mb-4 pl-4">
+            <label htmlFor="otherKneeConditionText" className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+              Please specify other knee condition(s):
+            </label>
+            <textarea
+              id="otherKneeConditionText"
+              className="w-full h-20 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Describe other knee conditions here..."
+              value={formData.diagnoses.otherKneeCondition || ''}
+              onChange={(e) => handleOtherTextChange('otherKneeCondition', e.target.value)}
+            />
+          </div>
+        )}
+      </React.Fragment>
+    );
   };
 
   return (
@@ -74,72 +184,23 @@ const ClinicalHistoryStep: React.FC = () => {
           Have you been diagnosed with any of the following conditions? Select all that apply.
         </p>
 
-        <div className="space-y-4">
-          {[
-            { id: 'herniatedDisc', label: 'Herniated Disc' },
-            { id: 'spinalStenosis', label: 'Spinal Stenosis' },
-            { id: 'spondylolisthesis', label: 'Spondylolisthesis' },
-            { id: 'scoliosis', label: 'Scoliosis' },
-            { id: 'spinalFracture', label: 'Spinal Fracture' },
-            { id: 'degenerativeDiscDisease', label: 'Degenerative Disc Disease' },
-            { id: 'otherConditionSelected', label: 'Other Condition(s)'}, // Added "Other" to the list
-          ].map((condition) => {
-            const diagnosisKey = condition.id as keyof Pick<typeof formData.diagnoses, 
-              'herniatedDisc' | 
-              'spinalStenosis' | 
-              'spondylolisthesis' | 
-              'scoliosis' | 
-              'spinalFracture' | 
-              'degenerativeDiscDisease' |
-              'otherConditionSelected'>;
-
-            return (
-              <React.Fragment key={condition.id}>
-                <div className="flex flex-col sm:flex-row sm:items-center p-3 border rounded-md hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors">
-                  <div className="font-medium text-slate-800 dark:text-gray-200 flex-1 mb-2 sm:mb-0">{condition.label}</div>
-                  <div className="flex space-x-4">
-                    <label className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        name={`diagnosis-${condition.id}`}
-                        className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700"
-                        checked={formData.diagnoses[diagnosisKey] === true}
-                        onChange={() => handleDiagnosisChange(diagnosisKey, true)}
-                      />
-                      <span className="ml-2 text-slate-700 dark:text-gray-300">Yes</span>
-                    </label>
-                    <label className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        name={`diagnosis-${condition.id}`}
-                        className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700"
-                        checked={formData.diagnoses[diagnosisKey] === false || formData.diagnoses[diagnosisKey] === undefined}
-                        onChange={() => handleDiagnosisChange(diagnosisKey, false)}
-                      />
-                      <span className="ml-2 text-slate-700 dark:text-gray-300">No</span>
-                    </label>
-                  </div>
-                </div>
-                {condition.id === 'otherConditionSelected' && formData.diagnoses.otherConditionSelected && (
-                  <div className="mt-2 mb-4 pl-4">
-                    <label htmlFor="otherDiagnosesText" className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
-                      Please specify other condition(s):
-                    </label>
-                    <textarea
-                      id="otherDiagnosesText"
-                      className="w-full h-20 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Describe other conditions here..."
-                      value={formData.diagnoses.other || ''}
-                      onChange={handleOtherDiagnosisChange}
-                    />
-                  </div>
-                )}
-              </React.Fragment>
-            );
-          })}
+        {/* Hip Diagnoses Section */}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-4">Hip Diagnoses</h3>
+          <div className="space-y-4">
+            {hipConditions.map((condition) => renderConditionItem(condition, 'hip'))}
+          </div>
         </div>
 
-        {/* New Symptom Questions */}
+        {/* Knee Diagnoses Section */}
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-4">Knee Diagnoses</h3>
+          <div className="space-y-4">
+            {kneeConditions.map((condition) => renderConditionItem(condition, 'knee'))}
+          </div>
+        </div>
+
+        {/* Symptom Questions */}
         <div className="mt-8 pt-6 border-t border-slate-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-gray-200 mb-4">About Your Symptoms</h3>
 
@@ -150,7 +211,7 @@ const ClinicalHistoryStep: React.FC = () => {
             <textarea
               id="mainSymptoms"
               className="w-full h-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., lower back pain, numbness in leg, difficulty walking..."
+              placeholder="e.g., hip pain, knee swelling, difficulty walking, stiffness..."
               value={formData.diagnoses.mainSymptoms || ''}
               onChange={handleMainSymptomsChange}
             />

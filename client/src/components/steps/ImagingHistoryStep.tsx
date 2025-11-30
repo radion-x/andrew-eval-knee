@@ -3,8 +3,8 @@ import { useFormContext } from '../../context/FormContext';
 import { Imaging } from '../../data/formData';
 import { FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput, SelectChangeEvent, Theme, useTheme } from '@mui/material';
 
-// Define spinal regions for the dropdown
-const SPINAL_REGIONS = ['Cervical', 'Thoracic', 'Lumbar', 'Sacral', 'Coccygeal'];
+// Define joint regions for the dropdown
+const JOINT_REGIONS = ['Left Hip', 'Right Hip', 'Left Knee', 'Right Knee'];
 
 // Define a type for individual upload statuses
 type UploadStatus = {
@@ -86,7 +86,7 @@ const ImagingHistoryStep: React.FC = () => {
       
       <div className="max-w-full">
         <p className="text-slate-700 dark:text-gray-300 mb-6">
-          Please indicate which imaging studies you have had for your spine. For each study, provide the date and location if available.
+          Please indicate which imaging studies you have had for your hip or knee. For each study, provide the date and location if available.
         </p>
 
         {/* Desktop version - only show on md screens and above */}
@@ -98,7 +98,7 @@ const ImagingHistoryStep: React.FC = () => {
                 <th className="text-center py-3 px-2 font-semibold text-slate-700 dark:text-gray-200 border-b dark:border-gray-600 w-[10%]">Had This?</th>
                 <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-gray-200 border-b dark:border-gray-600 w-[15%]">Radiology Clinic</th>
                 <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-gray-200 border-b dark:border-gray-600 w-[15%]">Date</th>
-                <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-gray-200 border-b dark:border-gray-600 w-[20%]">Spinal Regions</th>
+                <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-gray-200 border-b dark:border-gray-600 w-[20%]">Joint/Body Part</th>
                 <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-gray-200 border-b dark:border-gray-600 w-[25%]">Upload Document</th> 
               </tr>
             </thead>
@@ -129,7 +129,7 @@ const ImagingHistoryStep: React.FC = () => {
                             // Also clear related fields if "No" is selected
                             updateImagingField(index, 'clinic', '');
                             updateImagingField(index, 'date', '');
-                            updateImagingField(index, 'spinalRegions', []);
+                            updateImagingField(index, 'jointRegions', []);
                             updateImagingField(index, 'document', undefined);
                             updateImagingField(index, 'documentName', undefined);
                             setUploadStatuses(prev => prev.map((s, i) => i === index ? { isLoading: false, error: null, successMessage: null } : s));
@@ -175,27 +175,27 @@ const ImagingHistoryStep: React.FC = () => {
                               }
                             }}
                           >
-                            Spinal Regions
+                            Joint Region
                           </InputLabel>
                           <Select
                             labelId={`spinal-regions-label-${index}`}
                             id={`spinal-regions-${index}`}
                             multiple
-                            value={image.spinalRegions || []}
+                            value={image.jointRegions || []}
                             onChange={(e) => {
                               // Ensure we always save an array
                               const selectedValues = typeof e.target.value === 'string' 
                                 ? [e.target.value] 
                                 : Array.isArray(e.target.value) ? e.target.value : [];
                               console.log(`Updating spinal regions for ${image.type}:`, selectedValues);
-                              updateImagingField(index, 'spinalRegions', selectedValues);
+                              updateImagingField(index, 'jointRegions', selectedValues);
                               // Debug state after update
                               setTimeout(() => {
                                 const currentImaging = formData.imaging[index];
-                                console.log(`After update, spinal regions for ${image.type}:`, currentImaging?.spinalRegions);
+                                console.log(`After update, spinal regions for ${image.type}:`, currentImaging?.jointRegions);
                               }, 0);
                             }}
-                            input={<OutlinedInput label="Spinal Regions" />}
+                            input={<OutlinedInput label="Joint Region" />}
                             displayEmpty
                             renderValue={(selected) => 
                             (selected as string[]).length > 0 
@@ -218,7 +218,7 @@ const ImagingHistoryStep: React.FC = () => {
                               }
                             }}
                           >
-                            {SPINAL_REGIONS.map((region) => (
+                            {JOINT_REGIONS.map((region) => (
                               <MenuItem 
                                 key={region} 
                                 value={region}
@@ -238,7 +238,7 @@ const ImagingHistoryStep: React.FC = () => {
                                 }}
                               >
                                 <Checkbox 
-                                  checked={image.spinalRegions?.includes(region) || false} 
+                                  checked={image.jointRegions?.includes(region) || false} 
                                   sx={{
                                     color: 'var(--color-text-secondary)',
                                     '&.Mui-checked': {
@@ -328,7 +328,7 @@ const ImagingHistoryStep: React.FC = () => {
                           updateImagingField(index, 'hadStudy', false);
                           updateImagingField(index, 'clinic', '');
                           updateImagingField(index, 'date', '');
-                          updateImagingField(index, 'spinalRegions', []);
+                          updateImagingField(index, 'jointRegions', []);
                           updateImagingField(index, 'document', undefined);
                           updateImagingField(index, 'documentName', undefined);
                           setUploadStatuses(prev => prev.map((s, i) => i === index ? { isLoading: false, error: null, successMessage: null } : s));
@@ -381,21 +381,21 @@ const ImagingHistoryStep: React.FC = () => {
                             }
                           }}
                         >
-                          Spinal Regions
+                          Joint Region
                         </InputLabel>
                         <Select
                           labelId={`mobile-spinal-regions-label-${index}`}
                           id={`mobile-spinal-regions-${index}`}
                           multiple
                           displayEmpty
-                          value={image.spinalRegions || []}
+                          value={image.jointRegions || []}
                           onChange={(e) => {
                             const selectedValues = typeof e.target.value === 'string' 
                               ? [e.target.value] 
                               : e.target.value;
-                            updateImagingField(index, 'spinalRegions', selectedValues);
+                            updateImagingField(index, 'jointRegions', selectedValues);
                           }}
-                          input={<OutlinedInput label="Spinal Regions" />}
+                          input={<OutlinedInput label="Joint Region" />}
                           renderValue={(selected) => 
                             (selected as string[]).length > 0 
                               ? (selected as string[]).join(', ') 
@@ -417,7 +417,7 @@ const ImagingHistoryStep: React.FC = () => {
                             }
                           }}
                         >
-                          {SPINAL_REGIONS.map((region) => (
+                          {JOINT_REGIONS.map((region) => (
                             <MenuItem 
                               key={region} 
                               value={region}
@@ -437,7 +437,7 @@ const ImagingHistoryStep: React.FC = () => {
                               }}
                             >
                               <Checkbox 
-                                checked={image.spinalRegions?.includes(region) || false} 
+                                checked={image.jointRegions?.includes(region) || false} 
                                 sx={{
                                   color: 'var(--color-text-secondary)',
                                   '&.Mui-checked': {

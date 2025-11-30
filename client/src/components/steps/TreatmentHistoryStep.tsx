@@ -131,22 +131,55 @@ const TreatmentHistoryStep: React.FC = () => {
                 <input
                   type="checkbox"
                   className="mt-1 h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 rounded"
-                  checked={formData.treatments.spinalInjections}
-                  onChange={(e) => handleTreatmentChange('spinalInjections', e.target.checked)}
+                  checked={formData.treatments.injections}
+                  onChange={(e) => handleTreatmentChange('injections', e.target.checked)}
                 />
-                <span className="ml-2 block text-slate-700 dark:text-gray-300">Spinal Injections</span>
+                <span className="ml-2 block text-slate-700 dark:text-gray-300">Injections</span>
               </div>
               
-              {formData.treatments.spinalInjections && (
-                <div className="ml-6 mt-2">
-                  <textarea
-                    className="w-full h-20 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Provide details about the injections"
-                    value={formData.treatments.spinalInjectionsDetails || ''}
-                    onChange={(e) => handleTreatmentDetailChange('spinalInjectionsDetails', e.target.value)}
-                  />
+              {formData.treatments.injections && (
+                <div className="ml-6 mt-2 space-y-2">
+                  <p className="text-sm text-slate-600 dark:text-gray-400 mb-2">Select all injection types you have received:</p>
+                  {[
+                    { id: 'Cortisone', label: 'Cortisone' },
+                    { id: 'PRP', label: 'PRP (Platelet-Rich Plasma)' },
+                    { id: 'Viscosupplementation', label: 'Viscosupplementation (e.g., Synvisc, Monovisc)' },
+                  ].map((injection) => (
+                    <label key={injection.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 rounded"
+                        checked={formData.treatments.injectionTypes?.includes(injection.id) || false}
+                        onChange={(e) => {
+                          const currentTypes = formData.treatments.injectionTypes || [];
+                          const newTypes = e.target.checked
+                            ? [...currentTypes, injection.id]
+                            : currentTypes.filter(t => t !== injection.id);
+                          updateFormData({
+                            treatments: {
+                              ...formData.treatments,
+                              injectionTypes: newTypes
+                            }
+                          });
+                        }}
+                      />
+                      <span className="ml-2 text-sm text-slate-700 dark:text-gray-300">{injection.label}</span>
+                    </label>
+                  ))}
                 </div>
               )}
+            </div>
+
+            <div className="p-3 border rounded-md hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors">
+              <label className="flex items-start">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 rounded"
+                  checked={formData.treatments.radiofrequencyAblation}
+                  onChange={(e) => handleTreatmentChange('radiofrequencyAblation', e.target.checked)}
+                />
+                <span className="ml-2 block text-slate-700 dark:text-gray-300">Radiofrequency Ablation (e.g., Coolief)</span>
+              </label>
             </div>
 
             <div className="p-3 border rounded-md hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors">
@@ -188,10 +221,10 @@ const TreatmentHistoryStep: React.FC = () => {
         </section>
 
         <section className="pt-4 border-t border-slate-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-4">Spinal Surgery History</h3>
+          <h3 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-4">Hip/Knee Surgery History</h3>
           
           <div className="mb-4">
-            <p className="text-slate-700 dark:text-gray-300 mb-3">Have you had previous surgery on your back?</p>
+            <p className="text-slate-700 dark:text-gray-300 mb-3">Have you had previous surgery on your hip or knee?</p>
             
             <div className="flex space-x-4">
               <label className="inline-flex items-center">

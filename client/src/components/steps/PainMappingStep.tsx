@@ -595,7 +595,7 @@ const getIntensityColor = (intensity: number): string => {
 const PainMappingStep = forwardRef((props, ref) => {
   const { formData, updateFormData } = useFormContext();
   const [selectedPainAreaId, setSelectedPainAreaId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<BodyView>('back');
+  const [currentView, setCurrentView] = useState<BodyView>('front');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const painMapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -777,134 +777,55 @@ const PainMappingStep = forwardRef((props, ref) => {
     }
   };
 
-const muscleWeaknessAreaOptions: { key: string, label: string }[] = [
-  { key: 'Arms', label: 'Arms' },
-  { key: 'Legs', label: 'Legs' },
-  { key: 'Hands', label: 'Hands' },
-  { key: 'Feet', label: 'Feet' },
-  { key: 'Trunk/Core', label: 'Trunk/Core' },
-  { key: 'OtherMuscleArea', label: 'Other' },
+// Weakness area options for hip/knee patients
+const weaknessAreaOptions: { key: string, label: string }[] = [
+  { key: 'Hip', label: 'Hip' },
+  { key: 'Knee', label: 'Knee' },
+  { key: 'Leg', label: 'Leg' },
+  { key: 'OtherArea', label: 'Other' },
 ];
 
-const numbnessTinglingAreaOptions: { key: string, label: string }[] = [
-  { key: 'Arms', label: 'Arms' },
-  { key: 'Legs', label: 'Legs' },
-  { key: 'Hands', label: 'Hands' },
-  { key: 'Feet', label: 'Feet' },
-  { key: 'Face', label: 'Face' },
-  { key: 'Trunk/Body', label: 'Trunk/Body' },
-  { key: 'OtherNumbnessArea', label: 'Other' },
-];
-
-const balanceProblemOptions = [
-  'My balance feels normal',
-  'Occasionally unsteady',
-  'Frequently unsteady',
-  'Nearly fallen',
-  'Fallen or injured from a fall in the past 3 months'
-];
-
-const handleRedFlagMainPresentChange = (
-  flagName: keyof Pick<RedFlagsData, 'muscleWeakness' | 'numbnessOrTingling' | 'unexplainedWeightLoss' | 'bladderOrBowelIncontinence' | 'saddleAnaesthesia' | 'balanceProblems' | 'otherRedFlagPresent'>,
+// Simplified red flag handler for Hip/Knee assessment
+const handleRedFlagChange = (
+  flagName: 'fevers' | 'nightPain',
   isPresent: boolean
 ) => {
-  const newRedFlags = { ...formData.redFlags };
+  updateFormData({
+    redFlags: {
+      ...formData.redFlags,
+      [flagName]: { present: isPresent },
+    },
+  });
+};
 
-  if (flagName === 'muscleWeakness' || flagName === 'numbnessOrTingling') {
-    const symptom = newRedFlags[flagName];
-    symptom.present = isPresent;
-    if (!isPresent && symptom.areas) {
-      Object.keys(symptom.areas).forEach(areaKey => {
-        symptom.areas![areaKey] = { selected: false }; 
-      });
-    }
-  } else if (flagName === 'bladderOrBowelIncontinence' || flagName === 'saddleAnaesthesia') {
-    const symptom = newRedFlags[flagName] as RedFlagsData['bladderOrBowelIncontinence']; 
-    symptom.present = isPresent;
-    if (!isPresent) {
-      symptom.details = ''; 
-      if (flagName === 'bladderOrBowelIncontinence') {
-        symptom.isNewOnset = false; 
-      }
-    }
-  } else if (flagName === 'unexplainedWeightLoss') {
-    newRedFlags.unexplainedWeightLoss.present = isPresent;
-    if (!isPresent) {
-      newRedFlags.unexplainedWeightLoss.period = '';
-      newRedFlags.unexplainedWeightLoss.amountKg = undefined;
-    }
-  } else if (flagName === 'balanceProblems') {
-    newRedFlags.balanceProblems.present = isPresent;
-    if (!isPresent) {
-      newRedFlags.balanceProblems.type = ''; 
-    }
-  } else if (flagName === 'otherRedFlagPresent') {
-    newRedFlags.otherRedFlagPresent = isPresent;
-    if (!isPresent) {
-      newRedFlags.otherRedFlag = ''; 
-    }
+const handleWeaknessChange = (isPresent: boolean) => {
+  const newRedFlags = { ...formData.redFlags };
+  newRedFlags.weakness.present = isPresent;
+  if (!isPresent && newRedFlags.weakness.areas) {
+    Object.keys(newRedFlags.weakness.areas).forEach(areaKey => {
+      newRedFlags.weakness.areas![areaKey] = { selected: false };
+    });
   }
   updateFormData({ redFlags: newRedFlags });
 };
 
-const handleAreaSelectionChange = (
-  flagName: 'muscleWeakness' | 'numbnessOrTingling',
-  areaKey: string,
-  isSelected: boolean
-) => {
+const handleWeaknessAreaChange = (areaKey: string, isSelected: boolean) => {
   const newRedFlags = { ...formData.redFlags };
-  const symptom = newRedFlags[flagName];
-  if (symptom.areas && symptom.areas[areaKey]) {
-    symptom.areas[areaKey].selected = isSelected;
+  if (newRedFlags.weakness.areas && newRedFlags.weakness.areas[areaKey]) {
+    newRedFlags.weakness.areas[areaKey].selected = isSelected;
   }
   updateFormData({ redFlags: newRedFlags });
 };
 
-const handleSingleDetailChange = (
-  flagName: 'bladderOrBowelIncontinence' | 'saddleAnaesthesia',
-  detailValue: string 
-) => {
+const handleUnexplainedWeightLossChange = (isPresent: boolean) => {
   updateFormData({
     redFlags: {
       ...formData.redFlags,
-      [flagName]: {
-        ...formData.redFlags[flagName],
-        details: detailValue, 
+      unexplainedWeightLoss: {
+        present: isPresent,
+        period: isPresent ? formData.redFlags.unexplainedWeightLoss.period : '',
+        amountKg: isPresent ? formData.redFlags.unexplainedWeightLoss.amountKg : undefined,
       },
-    },
-  });
-};
-
-const handleBladderIsNewOnsetChange = (isNewOnset: boolean) => {
-  updateFormData({
-    redFlags: {
-      ...formData.redFlags,
-      bladderOrBowelIncontinence: {
-        ...formData.redFlags.bladderOrBowelIncontinence,
-        isNewOnset: isNewOnset,
-      },
-    },
-  });
-};
-
-const handleBalanceProblemTypeChange = (typeValue: string) => {
-  updateFormData({
-    redFlags: {
-      ...formData.redFlags,
-      balanceProblems: {
-        ...formData.redFlags.balanceProblems,
-        present: true, 
-        type: typeValue,
-      },
-    },
-  });
-};
-
-const handleOtherRedFlagTextChange = (text: string) => {
-  updateFormData({
-    redFlags: {
-      ...formData.redFlags,
-      otherRedFlag: text,
     },
   });
 };
@@ -1086,70 +1007,26 @@ const handleOtherRedFlagTextChange = (text: string) => {
           Please indicate if you are experiencing any of the following symptoms. These are important to note.
         </p>
 
+        {/* Fevers */}
         <div className="mb-4 p-3 border-b border-gray-300 dark:border-gray-600">
           <label className="flex items-center space-x-3">
             <input
               type="checkbox"
-              checked={formData.redFlags.muscleWeakness.present}
-              onChange={(e) => handleRedFlagMainPresentChange('muscleWeakness', e.target.checked)}
+              checked={formData.redFlags.fevers.present}
+              onChange={(e) => handleRedFlagChange('fevers', e.target.checked)}
               className="form-checkbox h-5 w-5 text-rose-600 accent-rose-500 focus:ring-rose-500"
             />
-            <span className="text-md font-medium text-gray-800 dark:text-gray-200">Muscle weakness</span>
+            <span className="text-md font-medium text-gray-800 dark:text-gray-200">Fevers</span>
           </label>
-          {formData.redFlags.muscleWeakness.present && formData.redFlags.muscleWeakness.areas && (
-            <div className="mt-3 pl-8 space-y-4">
-              {muscleWeaknessAreaOptions.map(area => (
-                <div key={`mw-${area.key}`} className="p-2 border rounded-md border-rose-200 dark:border-rose-700/50">
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.redFlags.muscleWeakness.areas![area.key]?.selected || false}
-                      onChange={(e) => handleAreaSelectionChange('muscleWeakness', area.key, e.target.checked)}
-                      className="form-checkbox h-4 w-4 text-rose-500 accent-rose-400 focus:ring-rose-400"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{area.label}</span>
-                  </label>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        <div className="mb-4 p-3 border-b border-gray-300 dark:border-gray-600">
-          <label className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              checked={formData.redFlags.numbnessOrTingling.present}
-              onChange={(e) => handleRedFlagMainPresentChange('numbnessOrTingling', e.target.checked)}
-              className="form-checkbox h-5 w-5 text-rose-600 accent-rose-500 focus:ring-rose-500"
-            />
-            <span className="text-md font-medium text-gray-800 dark:text-gray-200">Numbness or tingling</span>
-          </label>
-          {formData.redFlags.numbnessOrTingling.present && formData.redFlags.numbnessOrTingling.areas && (
-             <div className="mt-3 pl-8 space-y-4">
-              {numbnessTinglingAreaOptions.map(area => (
-                <div key={`nt-${area.key}`} className="p-2 border rounded-md border-rose-200 dark:border-rose-700/50">
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.redFlags.numbnessOrTingling.areas![area.key]?.selected || false}
-                      onChange={(e) => handleAreaSelectionChange('numbnessOrTingling', area.key, e.target.checked)}
-                      className="form-checkbox h-4 w-4 text-rose-500 accent-rose-400 focus:ring-rose-400"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{area.label}</span>
-                  </label>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        
+        {/* Unexplained Weight Loss */}
         <div className="mb-4 p-3 border-b border-gray-300 dark:border-gray-600">
           <label className="flex items-center space-x-3">
             <input
               type="checkbox"
               checked={formData.redFlags.unexplainedWeightLoss.present}
-              onChange={(e) => handleRedFlagMainPresentChange('unexplainedWeightLoss', e.target.checked)}
+              onChange={(e) => handleUnexplainedWeightLossChange(e.target.checked)}
               className="form-checkbox h-5 w-5 text-rose-600 accent-rose-500 focus:ring-rose-500"
             />
             <span className="text-md font-medium text-gray-800 dark:text-gray-200">Unexplained weight loss</span>
@@ -1186,118 +1063,55 @@ const handleOtherRedFlagTextChange = (text: string) => {
           )}
         </div>
 
+        {/* Night Pain */}
         <div className="mb-4 p-3 border-b border-gray-300 dark:border-gray-600">
           <label className="flex items-center space-x-3">
             <input
               type="checkbox"
-              checked={formData.redFlags.bladderOrBowelIncontinence.present}
-              onChange={(e) => handleRedFlagMainPresentChange('bladderOrBowelIncontinence', e.target.checked)}
+              checked={formData.redFlags.nightPain.present}
+              onChange={(e) => handleRedFlagChange('nightPain', e.target.checked)}
               className="form-checkbox h-5 w-5 text-rose-600 accent-rose-500 focus:ring-rose-500"
             />
-            <span className="text-md font-medium text-gray-800 dark:text-gray-200">Bladder or bowel incontinence</span>
+            <span className="text-md font-medium text-gray-800 dark:text-gray-200">Night pain (pain that wakes you from sleep)</span>
           </label>
-          {formData.redFlags.bladderOrBowelIncontinence.present && (
-            <div className="mt-3 pl-8">
-              <div className="mb-2">
-                <label htmlFor="incontinenceType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Type:
-                </label>
-                <select
-                  id="incontinenceType"
-                  value={formData.redFlags.bladderOrBowelIncontinence.details || ''}
-                  onChange={(e) => handleSingleDetailChange('bladderOrBowelIncontinence', e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-rose-500 focus:ring-rose-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2"
-                >
-                  <option value="">Select type...</option>
-                  <option value="Bladder">Bladder</option>
-                  <option value="Bowel">Bowel</option>
-                  <option value="Both">Both</option>
-                </select>
-              </div>
-              <div className="mt-3">
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={formData.redFlags.bladderOrBowelIncontinence.isNewOnset || false}
-                    onChange={(e) => handleBladderIsNewOnsetChange(e.target.checked)}
-                    className="form-checkbox h-4 w-4 text-rose-500 accent-rose-400 focus:ring-rose-400"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Is this a new onset of this incontinence?</span>
-                </label>
-              </div>
-            </div>
-          )}
         </div>
 
+        {/* Weakness */}
         <div className="mb-4 p-3 border-b border-gray-300 dark:border-gray-600">
           <label className="flex items-center space-x-3">
             <input
               type="checkbox"
-              checked={formData.redFlags.saddleAnaesthesia.present}
-              onChange={(e) => handleRedFlagMainPresentChange('saddleAnaesthesia', e.target.checked)}
+              checked={formData.redFlags.weakness.present}
+              onChange={(e) => handleWeaknessChange(e.target.checked)}
               className="form-checkbox h-5 w-5 text-rose-600 accent-rose-500 focus:ring-rose-500"
             />
-            <span className="text-md font-medium text-gray-800 dark:text-gray-200">Saddle anaesthesia (numbness around inner thighs, buttocks)</span>
+            <span className="text-md font-medium text-gray-800 dark:text-gray-200">Weakness</span>
           </label>
-          {formData.redFlags.saddleAnaesthesia.present && (
-            <div className="mt-3 pl-8">
-              <div className="mb-2">
-                <label htmlFor="saddleAnaesthesiaArea" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Primary area affected:
-                </label>
-                <select
-                  id="saddleAnaesthesiaArea"
-                  value={formData.redFlags.saddleAnaesthesia.details || ''}
-                  onChange={(e) => handleSingleDetailChange('saddleAnaesthesia', e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-rose-500 focus:ring-rose-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2"
-                >
-                  <option value="">Select area...</option>
-                  <option value="Inner Thighs">Inner Thighs</option>
-                  <option value="Buttocks">Buttocks</option>
-                  <option value="Perineum">Perineum (area between anus and genitals)</option>
-                  <option value="Genital Area">Genital Area</option>
-                  <option value="Combination">Combination of these areas</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <div className="mb-4 p-3 border-b border-gray-300 dark:border-gray-600">
-          <label className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              checked={formData.redFlags.balanceProblems.present}
-              onChange={(e) => handleRedFlagMainPresentChange('balanceProblems', e.target.checked)}
-              className="form-checkbox h-5 w-5 text-rose-600 accent-rose-500 focus:ring-rose-500"
-            />
-            <span className="text-md font-medium text-gray-800 dark:text-gray-200">Have you experienced any balance problems recently?</span>
-          </label>
-          {formData.redFlags.balanceProblems.present && (
+          {formData.redFlags.weakness.present && formData.redFlags.weakness.areas && (
             <div className="mt-3 pl-8 space-y-2">
-              {balanceProblemOptions.map(option => (
-                <label key={option} className="flex items-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Where do you experience weakness?</p>
+              {weaknessAreaOptions.map(area => (
+                <label key={`weakness-${area.key}`} className="flex items-center space-x-3">
                   <input
-                    type="radio"
-                    name="balanceProblemType"
-                    value={option}
-                    checked={formData.redFlags.balanceProblems.type === option}
-                    onChange={(e) => handleBalanceProblemTypeChange(e.target.value)}
-                    className="form-radio h-4 w-4 text-rose-600 accent-rose-500 focus:ring-rose-500"
+                    type="checkbox"
+                    checked={formData.redFlags.weakness.areas![area.key]?.selected || false}
+                    onChange={(e) => handleWeaknessAreaChange(area.key, e.target.checked)}
+                    className="form-checkbox h-4 w-4 text-rose-500 accent-rose-400 focus:ring-rose-400"
                   />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{option}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{area.label}</span>
                 </label>
               ))}
             </div>
           )}
         </div>
 
+        {/* Other Red Flags */}
         <div className="mb-4 p-3">
           <label className="flex items-center space-x-3">
             <input
               type="checkbox"
               checked={formData.redFlags.otherRedFlagPresent || false}
-              onChange={(e) => handleRedFlagMainPresentChange('otherRedFlagPresent', e.target.checked)}
+              onChange={(e) => updateFormData({ redFlags: { ...formData.redFlags, otherRedFlagPresent: e.target.checked, otherRedFlag: e.target.checked ? formData.redFlags.otherRedFlag : '' } })}
               className="form-checkbox h-5 w-5 text-rose-600 accent-rose-500 focus:ring-rose-500"
             />
             <span className="text-md font-medium text-gray-800 dark:text-gray-200">Other concerns or red flags?</span>
@@ -1306,7 +1120,7 @@ const handleOtherRedFlagTextChange = (text: string) => {
             <div className="mt-3 pl-8">
               <textarea
                 value={formData.redFlags.otherRedFlag || ''}
-                onChange={(e) => handleOtherRedFlagTextChange(e.target.value)}
+                onChange={(e) => updateFormData({ redFlags: { ...formData.redFlags, otherRedFlag: e.target.value } })}
                 placeholder="Please describe any other red flag symptoms or concerns..."
                 className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-rose-500 focus:ring-rose-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 h-24"
               />

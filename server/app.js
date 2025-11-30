@@ -434,10 +434,10 @@ app.post('/api/email/send-assessment', async (req, res) => {
     // Send email to admin/BCC
     const adminHtmlContent = generateAssessmentEmailHTML({ formData, aiSummary, recommendationText: formData.systemRecommendation, nextStep: formData.nextStep }, serverBaseUrl, 'admin');
     const adminMailOptions = {
-      from: `"Spine IQ Assessment" <${process.env.EMAIL_SENDER_ADDRESS}>`,
+      from: `"Hip & Knee IQ Assessment" <${process.env.EMAIL_SENDER_ADDRESS}>`,
       to: primaryRecipient,
       bcc: process.env.BCC_EMAIL_RECIPIENT_ADDRESS,
-      subject: `Spine Assessment Summary - ${formData.demographics?.fullName || 'N/A'} - ${subjectDate}`,
+      subject: `Hip & Knee Assessment Summary - ${formData.demographics?.fullName || 'N/A'} - ${subjectDate}`,
       html: adminHtmlContent,
       attachments: attachments
     };
@@ -447,9 +447,9 @@ app.post('/api/email/send-assessment', async (req, res) => {
     if (patientEmail && typeof patientEmail === 'string' && patientEmail.trim() !== '' && patientEmail !== primaryRecipient) {
       const patientHtmlContent = generateAssessmentEmailHTML({ formData, aiSummary, recommendationText: formData.systemRecommendation, nextStep: formData.nextStep }, serverBaseUrl, 'patient');
       const patientMailOptions = {
-        from: `"Spine IQ Assessment" <${process.env.EMAIL_SENDER_ADDRESS}>`,
+        from: `"Hip & Knee IQ Assessment" <${process.env.EMAIL_SENDER_ADDRESS}>`,
         to: patientEmail,
-        subject: `Your Spine Assessment Summary - ${subjectDate}`,
+        subject: `Your Hip & Knee Assessment Summary - ${subjectDate}`,
         html: patientHtmlContent,
         // No attachments for the patient email
       };
@@ -516,7 +516,7 @@ function generateAssessmentEmailHTML(data, serverBaseUrl, recipientType) {
         </style>
       </head>
       <body>
-        <h1>Spine Assessment Report</h1>
+        <h1>Hip & Knee Assessment Report</h1>
   `;
 
   if (recipientType === 'patient') {

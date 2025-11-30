@@ -11,14 +11,30 @@ const addressSchema = new mongoose.Schema({
 const assessmentSchema = new mongoose.Schema({
   consent: Boolean,
   diagnoses: {
-    herniatedDisc: Boolean,
-    spinalStenosis: Boolean,
-    spondylolisthesis: Boolean,
-    scoliosis: Boolean,
-    spinalFracture: Boolean,
-    degenerativeDiscDisease: Boolean,
-    otherConditionSelected: Boolean,
-    other: String,
+    // Hip Diagnoses
+    hipOsteoarthritis: Boolean,
+    hipRheumatoidArthritis: Boolean,
+    labralTear: Boolean,
+    trochantericBursitis: Boolean,
+    glutealTendonTear: Boolean,
+    hipStressFracture: Boolean,
+    avascularNecrosis: Boolean,
+    hipDysplasia: Boolean,
+    otherHipConditionSelected: Boolean,
+    otherHipCondition: String,
+    // Knee Diagnoses
+    kneeOsteoarthritis: Boolean,
+    kneeRheumatoidArthritis: Boolean,
+    aclRupture: Boolean,
+    otherLigamentInjury: Boolean,
+    otherLigamentInjuryDetails: String,
+    patellaInstability: Boolean,
+    meniscalTear: Boolean,
+    kneeFracture: Boolean,
+    kneeTendinitis: Boolean,
+    otherKneeConditionSelected: Boolean,
+    otherKneeCondition: String,
+    // Symptom details
     mainSymptoms: String,
     symptomDuration: String,
     symptomProgression: String,
@@ -29,8 +45,9 @@ const assessmentSchema = new mongoose.Schema({
     prescriptionAntiInflammatoryName: String,
     prescriptionPainMedication: Boolean,
     prescriptionPainMedicationName: String,
-    spinalInjections: Boolean,
-    spinalInjectionsDetails: String,
+    injections: Boolean,
+    injectionTypes: [String], // Multiselect: Cortisone, PRP, Viscosupplementation
+    radiofrequencyAblation: Boolean,
     physiotherapy: Boolean,
     chiropracticTreatment: Boolean,
     osteopathyMyotherapy: Boolean,
@@ -43,7 +60,7 @@ const assessmentSchema = new mongoose.Schema({
     clinic: String,
     date: String,
     documentName: String,
-    spinalRegions: { 
+    jointRegions: { 
       type: [String],
       default: [], // Empty array as default
       required: false // Allow the field to be missing/undefined and will be set to default []
@@ -52,12 +69,10 @@ const assessmentSchema = new mongoose.Schema({
   imagingRecordsPermission: Boolean,
   painAreas: [{ id: String, region: String, intensity: Number, notes: String, coordinates: { x: Number, y: Number } }],
   redFlags: {
-    muscleWeakness: { present: Boolean, areas: mongoose.Schema.Types.Mixed },
-    numbnessOrTingling: { present: Boolean, areas: mongoose.Schema.Types.Mixed },
+    fevers: { present: Boolean },
     unexplainedWeightLoss: { present: Boolean, period: String, amountKg: Number },
-    bladderOrBowelIncontinence: { present: Boolean, severity: Number, details: String },
-    saddleAnaesthesia: { present: Boolean, severity: Number, details: String },
-    balanceProblems: { present: { type: Boolean, default: false }, type: { type: String, default: '' } },
+    nightPain: { present: Boolean },
+    weakness: { present: Boolean, areas: mongoose.Schema.Types.Mixed },
     otherRedFlagPresent: Boolean,
     otherRedFlag: String,
   },

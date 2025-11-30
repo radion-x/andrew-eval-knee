@@ -14,13 +14,13 @@ export interface Surgery {
 }
 
 export interface Imaging {
-  type: 'X-Ray' | 'MRI' | 'CT Scan' | 'CT Myelogram' | 'EMG/Nerve Conduction';
+  type: 'X-Ray' | 'MRI' | 'CT Scan' | 'Ultrasound' | 'Bone Scan / SPECT';
   hadStudy: boolean;
   clinic?: string;
   date?: string;
   document?: File; // For the file input
   documentName?: string; // To store the path/name of the uploaded file from server
-  spinalRegions?: string[]; // Array of selected spinal regions
+  jointRegions?: string[]; // Array of selected joint regions (Left Hip, Right Hip, Left Knee, Right Knee)
 }
 
 // New interface for a generic red flag item
@@ -59,19 +59,12 @@ export interface RedFlagWeightLossItem {
   amountKg?: number; 
 }
 
-// Interface for the "Red Flags" section
+// Interface for the "Red Flags" section - Simplified for Hip/Knee
 export interface RedFlagsData {
-  muscleWeakness: RedFlagDetailedItem;
-  numbnessOrTingling: RedFlagDetailedItem;
-  // feverOrRecentInfection: RedFlagSeverityItem; // Removed
+  fevers: { present: boolean };
   unexplainedWeightLoss: RedFlagWeightLossItem;
-  bladderOrBowelIncontinence: RedFlagDetailedItem; // Will use 'details' for its single dropdown
-  saddleAnaesthesia: RedFlagDetailedItem; // Will use 'details' for its single dropdown
-  balanceProblems: { // Changed from string to object
-    present: boolean;
-    type?: string; // Stores the selected radio option if present is true
-  };
-  // onsetIncontinence: { present: boolean }; // REMOVED - will be part of bladderOrBowelIncontinence
+  nightPain: { present: boolean };
+  weakness: RedFlagDetailedItem;
   otherRedFlagPresent?: boolean;
   otherRedFlag?: string;
 }
@@ -137,20 +130,35 @@ export interface FormData {
   // Step 1: Onboarding
   consent: boolean;
 
-  // Step 2: Medical History
+  // Step 2: Medical History - Hip and Knee Diagnoses
   diagnoses: {
-    herniatedDisc: boolean;
-    spinalStenosis: boolean;
-    spondylolisthesis: boolean;
-    scoliosis: boolean;
-    spinalFracture: boolean;
-    degenerativeDiscDisease: boolean;
-    otherConditionSelected?: boolean; // Tracks if "Other" radio is Yes
-    other?: string; // Text for other condition
-    // New fields for symptom duration and progression
+    // Hip Diagnoses
+    hipOsteoarthritis: boolean;
+    hipRheumatoidArthritis: boolean;
+    labralTear: boolean;
+    trochantericBursitis: boolean;
+    glutealTendonTear: boolean;
+    hipStressFracture: boolean;
+    avascularNecrosis: boolean;
+    hipDysplasia: boolean;
+    otherHipConditionSelected?: boolean;
+    otherHipCondition?: string;
+    // Knee Diagnoses
+    kneeOsteoarthritis: boolean;
+    kneeRheumatoidArthritis: boolean;
+    aclRupture: boolean;
+    otherLigamentInjury: boolean;
+    otherLigamentInjuryDetails?: string;
+    patellaInstability: boolean;
+    meniscalTear: boolean;
+    kneeFracture: boolean;
+    kneeTendinitis: boolean;
+    otherKneeConditionSelected?: boolean;
+    otherKneeCondition?: string;
+    // Symptom details
     symptomDuration?: string; 
     symptomProgression?: 'Getting better' | 'Staying the same' | 'Getting worse' | ''; 
-    mainSymptoms?: string; // Added for the new question
+    mainSymptoms?: string;
   };
 
   // Step 3: Treatments & Surgery History
@@ -160,8 +168,9 @@ export interface FormData {
     prescriptionAntiInflammatoryName?: string;
     prescriptionPainMedication: boolean;
     prescriptionPainMedicationName?: string;
-    spinalInjections: boolean;
-    spinalInjectionsDetails?: string;
+    injections: boolean;
+    injectionTypes?: string[]; // Multiselect: Cortisone, PRP, Viscosupplementation
+    radiofrequencyAblation: boolean;
     physiotherapy: boolean;
     chiropracticTreatment: boolean;
     osteopathyMyotherapy: boolean;
@@ -196,14 +205,30 @@ export const initialFormData: FormData = {
   consent: false,
 
   diagnoses: {
-    herniatedDisc: false,
-    spinalStenosis: false,
-    spondylolisthesis: false,
-    scoliosis: false,
-    spinalFracture: false,
-    degenerativeDiscDisease: false,
-    otherConditionSelected: false,
-    other: '',
+    // Hip Diagnoses
+    hipOsteoarthritis: false,
+    hipRheumatoidArthritis: false,
+    labralTear: false,
+    trochantericBursitis: false,
+    glutealTendonTear: false,
+    hipStressFracture: false,
+    avascularNecrosis: false,
+    hipDysplasia: false,
+    otherHipConditionSelected: false,
+    otherHipCondition: '',
+    // Knee Diagnoses
+    kneeOsteoarthritis: false,
+    kneeRheumatoidArthritis: false,
+    aclRupture: false,
+    otherLigamentInjury: false,
+    otherLigamentInjuryDetails: '',
+    patellaInstability: false,
+    meniscalTear: false,
+    kneeFracture: false,
+    kneeTendinitis: false,
+    otherKneeConditionSelected: false,
+    otherKneeCondition: '',
+    // Symptom details
     symptomDuration: '',
     symptomProgression: '',
     mainSymptoms: '',
@@ -213,7 +238,9 @@ export const initialFormData: FormData = {
     overTheCounterMedication: false,
     prescriptionAntiInflammatory: false,
     prescriptionPainMedication: false,
-    spinalInjections: false,
+    injections: false,
+    injectionTypes: [],
+    radiofrequencyAblation: false,
     physiotherapy: false,
     chiropracticTreatment: false,
     osteopathyMyotherapy: false,
@@ -222,49 +249,32 @@ export const initialFormData: FormData = {
   surgeries: [],
 
   imaging: [
-    { type: 'X-Ray', hadStudy: false, clinic: '', date: '', spinalRegions: [] },
-    { type: 'MRI', hadStudy: false, clinic: '', date: '', spinalRegions: [] },
-    { type: 'CT Scan', hadStudy: false, clinic: '', date: '', spinalRegions: [] },
-    { type: 'CT Myelogram', hadStudy: false, clinic: '', date: '', spinalRegions: [] },
-    { type: 'EMG/Nerve Conduction', hadStudy: false, clinic: '', date: '', spinalRegions: [] },
+    { type: 'X-Ray', hadStudy: false, clinic: '', date: '', jointRegions: [] },
+    { type: 'MRI', hadStudy: false, clinic: '', date: '', jointRegions: [] },
+    { type: 'CT Scan', hadStudy: false, clinic: '', date: '', jointRegions: [] },
+    { type: 'Ultrasound', hadStudy: false, clinic: '', date: '', jointRegions: [] },
+    { type: 'Bone Scan / SPECT', hadStudy: false, clinic: '', date: '', jointRegions: [] },
   ],
 
   painAreas: [],
-  // painDescription: '', // This initialization will be REMOVED
   redFlags: {
-    muscleWeakness: { 
+    fevers: { present: false },
+    unexplainedWeightLoss: { present: false, period: '', amountKg: undefined },
+    nightPain: { present: false },
+    weakness: { 
       present: false, 
       areas: {
-        'Arms': { selected: false }, // Severity removed
-        'Legs': { selected: false }, // Severity removed
-        'Hands': { selected: false }, // Severity removed
-        'Feet': { selected: false }, // Severity removed
-        'Trunk/Core': { selected: false }, // Severity removed
-        'OtherMuscleArea': { selected: false }, // Severity removed
+        'Hip': { selected: false },
+        'Knee': { selected: false },
+        'Leg': { selected: false },
+        'OtherArea': { selected: false },
       } 
     },
-    numbnessOrTingling: { 
-      present: false, 
-      areas: {
-        'Arms': { selected: false }, // Severity removed
-        'Legs': { selected: false }, // Severity removed
-        'Hands': { selected: false }, // Severity removed
-        'Feet': { selected: false }, // Severity removed
-        'Face': { selected: false }, // Severity removed
-        'Trunk/Body': { selected: false }, // Severity removed
-        'OtherNumbnessArea': { selected: false }, // Severity removed
-      }
-    },
-    unexplainedWeightLoss: { present: false, period: '', amountKg: undefined },
-    bladderOrBowelIncontinence: { present: false, details: '', isNewOnset: false }, // Severity removed, isNewOnset added
-    saddleAnaesthesia: { present: false, details: '' }, // Severity removed
-    balanceProblems: { present: false, type: '' }, // Changed structure
-    // onsetIncontinence: { present: false }, // REMOVED
     otherRedFlagPresent: false,
     otherRedFlag: '',
   },
   treatmentGoals: '',
-  imagingRecordsPermission: false, // Initialize new field
+  imagingRecordsPermission: false,
 
   demographics: {
     fullName: '',
