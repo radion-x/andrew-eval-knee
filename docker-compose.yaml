@@ -6,8 +6,6 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-      args:
-        - VITE_SERVER_BASE_URL=${SERVICE_URL_SERVER}
     expose:
       - "80"
     depends_on:
