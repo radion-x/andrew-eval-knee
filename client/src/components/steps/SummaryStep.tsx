@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useFormContext } from '../../context/FormContext';
 import { useTheme } from '../../context/ThemeContext';
+import { getApiUrl } from '../../config/api';
 // import { RedFlagsData } from '../../data/formData'; // RedFlagsData type is implicitly handled via formData
 
 const SummaryStep: React.FC = () => {
@@ -173,7 +174,7 @@ const SummaryStep: React.FC = () => {
       });
       console.log("==========================================");
   
-      const saveResponse = await fetch('/api/assessment', {
+      const saveResponse = await fetch(getApiUrl('/api/assessment'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(assessmentToSave),
@@ -193,7 +194,7 @@ const SummaryStep: React.FC = () => {
         clientOrigin: window.location.origin,
       };
   
-      const emailResponse = await fetch('/api/email/send-assessment', {
+      const emailResponse = await fetch(getApiUrl('/api/email/send-assessment'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailPayload),
@@ -245,7 +246,7 @@ const SummaryStep: React.FC = () => {
       try {
         const currentFormData = formDataRef.current;
         const cleanFormDataForSummary = { ...currentFormData };
-        const summaryResponse = await fetch('/api/generate-summary', {
+        const summaryResponse = await fetch(getApiUrl('/api/generate-summary'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(cleanFormDataForSummary),

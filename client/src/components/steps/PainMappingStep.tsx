@@ -1,6 +1,7 @@
 import React, { useState, MouseEvent, useRef, useImperativeHandle, forwardRef } from 'react';
 import { useFormContext } from '../../context/FormContext';
 import { PainArea, RedFlagsData } from '../../data/formData';
+import { getApiUrl } from '../../config/api';
 import bodyFrontImg from '../../assets/body-front.png';
 import bodyBackImg from '../../assets/body-back.png';
 import html2canvas from 'html2canvas';
@@ -624,7 +625,7 @@ const PainMappingStep = forwardRef((props, ref) => {
       });
       const imageData = canvas.toDataURL('image/png');
   
-      const response = await fetch('/api/upload/pain-map', {
+      const response = await fetch(getApiUrl('/api/upload/pain-map'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFormContext } from '../../context/FormContext';
+import { getApiUrl } from '../../config/api';
 
 const AboutYouStep: React.FC = () => {
   const { formData, updateFormData, formSessionId } = useFormContext();
@@ -48,7 +49,7 @@ const AboutYouStep: React.FC = () => {
       const uploadFormData = new FormData();
       uploadFormData.append('referralFile', file);
 
-      const response = await fetch(`/api/upload/referral?formSessionId=${formSessionId}`, {
+      const response = await fetch(getApiUrl(`/api/upload/referral?formSessionId=${formSessionId}`), {
         method: 'POST',
         body: uploadFormData,
       });

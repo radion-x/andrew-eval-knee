@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useFormContext } from '../../context/FormContext';
 import { Imaging } from '../../data/formData';
+import { getApiUrl } from '../../config/api';
 import { FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput, SelectChangeEvent, Theme, useTheme } from '@mui/material';
 
 // Define joint regions for the dropdown
@@ -52,7 +53,7 @@ const ImagingHistoryStep: React.FC = () => {
 
     try {
       // Pass formSessionId as a query parameter
-      const response = await fetch(`/api/upload/imaging-file?formSessionId=${encodeURIComponent(formSessionId)}`, {
+      const response = await fetch(getApiUrl(`/api/upload/imaging-file?formSessionId=${encodeURIComponent(formSessionId)}`), {
         method: 'POST',
         body: payload,
         // Headers are not typically needed for FormData with fetch, browser sets Content-Type
