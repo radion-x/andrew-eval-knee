@@ -344,6 +344,69 @@ app.post('/api/upload/referral', upload.single('referralFile'), (req, res) => {
 
 
 // --- AI & EMAIL ENDPOINTS ---
+
+// Streaming AI Summary endpoint using Server-Sent Events (SSE)
+app.post('/api/generate-summary-stream', async (req, res) => {
+  if (!anthropic) {
+    return res.status(500).json({ error: 'Claude API client not initialized on server. API key may be missing or invalid.' });
+  }
+
+  try {
+    const formData = req.body;
+
+    if (!formData) {
+      return res.status(400).json({ error: 'No form data received.' });
+    }
+
+    const comprehensivePrompt = generateComprehensivePrompt(formData);
+
+    console.log("Starting streaming response from Claude API...");
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+    res.flushHeaders();
+
+    // Use Claude streaming API
+    const stream = await anthropic.messages.stream({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      messages: [{ role: "user", content: comprehensivePrompt }],
+    });
+
+    let fullText = '';
+
+    // Stream each text chunk to the client
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        const text = event.delta.text;
+        fullText += text;
+        // Send the chunk as an SSE event
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text })}\n\n`);
+      }
+    }
+
+    // Send completion event with full text
+    res.write(`data: ${JSON.stringify({ type: 'done', fullText })}\n\n`);
+    res.end();
+
+    console.log("Streaming summary completed.");
+
+  } catch (error) {
+    console.error('Error in /api/generate-summary-stream endpoint:', error);
+    let errorMessage = 'Failed to generate AI summary via backend.';
+    if (error.message) {
+      errorMessage = error.message;
+    }
+    // Send error as SSE event
+    res.write(`data: ${JSON.stringify({ type: 'error', error: errorMessage })}\n\n`);
+    res.end();
+  }
+});
+
+// Legacy non-streaming endpoint (kept for fallback)
 app.post('/api/generate-summary', async (req, res) => {
   if (!anthropic) {
     return res.status(500).json({ error: 'Claude API client not initialized on server. API key may be missing or invalid.' });
@@ -361,7 +424,7 @@ app.post('/api/generate-summary', async (req, res) => {
     console.log("Sending prompt to Claude API...");
 
     const claudeResponse = await anthropic.messages.create({
-      model: "claude-3-opus-20240229",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
       messages: [{ role: "user", content: comprehensivePrompt }],
     });

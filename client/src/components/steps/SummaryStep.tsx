@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useFormContext } from '../../context/FormContext';
 import { useTheme } from '../../context/ThemeContext';
 import { getApiUrl } from '../../config/api';
@@ -436,10 +437,11 @@ const SummaryStep: React.FC = () => {
             <h3 className={cardTitleBaseClass}>Initial Triage: Report and Summary</h3>
           </div>
           <div className={`${cardContentBaseClass} min-h-[100px]`}>
-            {/* Show streaming text while loading */}
+            {/* Show streaming text while loading - rendered as formatted markdown */}
             {isLoadingAiSummary && streamingText && (
-              <div className="w-full">
-                <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{streamingText}<span className="inline-block w-2 h-4 bg-blue-500 dark:bg-blue-400 animate-pulse ml-1"></span></p>
+              <div className="w-full prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown>{streamingText}</ReactMarkdown>
+                <span className="inline-block w-2 h-4 bg-blue-500 dark:bg-blue-400 animate-pulse"></span>
               </div>
             )}
             {/* Show loading indicator only if no streaming text yet */}
@@ -455,7 +457,12 @@ const SummaryStep: React.FC = () => {
               </div>
             )}
             {aiSummaryError && !isLoadingAiSummary && <p className="text-red-500 dark:text-red-400 text-center">AI Summary Error: {aiSummaryError}</p>}
-            {contextAiSummary && !isLoadingAiSummary && <p className="whitespace-pre-wrap w-full">{contextAiSummary}</p>}
+            {/* Final summary - rendered as formatted markdown */}
+            {contextAiSummary && !isLoadingAiSummary && (
+              <div className="w-full prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown>{contextAiSummary}</ReactMarkdown>
+              </div>
+            )}
             {!formData.consent && <p className="text-center">Consent must be provided on the first step to generate summary.</p>}
             {formData.consent && !contextAiSummary && !isLoadingAiSummary && !aiSummaryError && !streamingText && <p className="text-center">AI Summary will be generated automatically.</p>}
           </div>
