@@ -43,6 +43,7 @@ const SummaryStep: React.FC = () => {
   }, [formData.systemRecommendation, getNextStepSuggestion, updateFormData]);
 
   const [isLoadingAiSummary, setIsLoadingAiSummary] = useState<boolean>(false);
+  const [streamingText, setStreamingText] = useState<string>(''); // New state for streaming text
   const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
   const [isSavingAssessment, setIsSavingAssessment] = useState<boolean>(false);
   const [saveAssessmentError, setSaveAssessmentError] = useState<string | null>(null);
@@ -239,6 +240,7 @@ const SummaryStep: React.FC = () => {
 
       setIsLoadingAiSummary(true);
       setContextAiSummary(null);
+      setStreamingText(''); // Reset streaming text
       setAiSummaryError(null);
       setOverallStatusMessage("Generating Summary...");
       setIsInitialProcessingCompleteForSubmit(false);
@@ -246,21 +248,65 @@ const SummaryStep: React.FC = () => {
       try {
         const currentFormData = formDataRef.current;
         const cleanFormDataForSummary = { ...currentFormData };
-        const summaryResponse = await fetch(getApiUrl('/api/generate-summary'), {
+        
+        // Use streaming endpoint
+        const response = await fetch(getApiUrl('/api/generate-summary-stream'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(cleanFormDataForSummary),
         });
-        const summaryData = await summaryResponse.json();
-        if (!summaryResponse.ok) throw new Error(summaryData.error || `AI summary failed (Status: ${summaryResponse.status})`);
-        
-        setContextAiSummary(summaryData.summary);
-        setOverallStatusMessage("AI summary generated. Please choose your next step and submit.");
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `AI summary failed (Status: ${response.status})`);
+        }
+
+        // Handle SSE stream
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedText = '';
+
+        if (!reader) {
+          throw new Error('Failed to get response reader');
+        }
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                if (data.type === 'chunk') {
+                  accumulatedText += data.text;
+                  setStreamingText(accumulatedText);
+                } else if (data.type === 'done') {
+                  setContextAiSummary(data.fullText);
+                  setStreamingText(''); // Clear streaming text once complete
+                  setOverallStatusMessage("AI summary generated. Review your information and submit.");
+                } else if (data.type === 'error') {
+                  throw new Error(data.error);
+                }
+              } catch (parseError) {
+                // Skip malformed JSON lines (might be partial)
+                if (line.trim() !== 'data: ') {
+                  console.warn('Failed to parse SSE data:', line);
+                }
+              }
+            }
+          }
+        }
 
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error fetching AI summary.";
         setAiSummaryError(message);
         setOverallStatusMessage(`Error generating AI summary: ${message}`);
+        setStreamingText(''); // Clear on error
       } finally {
         setIsLoadingAiSummary(false);
         setIsInitialProcessingCompleteForSubmit(true); // Mark as complete even if there's an error
@@ -389,8 +435,15 @@ const SummaryStep: React.FC = () => {
           <div className={cardHeaderBaseClass}>
             <h3 className={cardTitleBaseClass}>Initial Triage: Report and Summary</h3>
           </div>
-          <div className={`${cardContentBaseClass} min-h-[100px] flex flex-col justify-center items-center`}>
-            {isLoadingAiSummary && !contextAiSummary && !aiSummaryError && (
+          <div className={`${cardContentBaseClass} min-h-[100px]`}>
+            {/* Show streaming text while loading */}
+            {isLoadingAiSummary && streamingText && (
+              <div className="w-full">
+                <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{streamingText}<span className="inline-block w-2 h-4 bg-blue-500 dark:bg-blue-400 animate-pulse ml-1"></span></p>
+              </div>
+            )}
+            {/* Show loading indicator only if no streaming text yet */}
+            {isLoadingAiSummary && !streamingText && !aiSummaryError && (
               <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                 <div className="flex items-center">
                   <span className="mr-2 text-lg">Generating Summary</span>
@@ -404,7 +457,7 @@ const SummaryStep: React.FC = () => {
             {aiSummaryError && !isLoadingAiSummary && <p className="text-red-500 dark:text-red-400 text-center">AI Summary Error: {aiSummaryError}</p>}
             {contextAiSummary && !isLoadingAiSummary && <p className="whitespace-pre-wrap w-full">{contextAiSummary}</p>}
             {!formData.consent && <p className="text-center">Consent must be provided on the first step to generate summary.</p>}
-            {formData.consent && !contextAiSummary && !isLoadingAiSummary && !aiSummaryError && <p className="text-center">AI Summary will be generated automatically.</p>}
+            {formData.consent && !contextAiSummary && !isLoadingAiSummary && !aiSummaryError && !streamingText && <p className="text-center">AI Summary will be generated automatically.</p>}
           </div>
         </div>
 
