@@ -201,7 +201,7 @@ const ImagingHistoryStep: React.FC = () => {
                             renderValue={(selected) => 
                             (selected as string[]).length > 0 
                               ? (selected as string[]).join(', ') 
-                              : <span className="text-gray-500 dark:text-gray-400">Select spinal regions</span>
+                              : <span className="text-gray-500 dark:text-gray-400">Select joint</span>
                           }
                             sx={{
                               backgroundColor: 'var(--color-bg-input)',
@@ -400,7 +400,7 @@ const ImagingHistoryStep: React.FC = () => {
                           renderValue={(selected) => 
                             (selected as string[]).length > 0 
                               ? (selected as string[]).join(', ') 
-                              : <span className="text-gray-500 dark:text-gray-400">Select spinal regions</span>
+                              : <span className="text-gray-500 dark:text-gray-400">Select joint</span>
                           }
                           sx={{
                             backgroundColor: 'var(--color-bg-input)',
