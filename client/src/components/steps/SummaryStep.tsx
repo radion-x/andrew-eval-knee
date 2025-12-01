@@ -680,59 +680,6 @@ const SummaryStep: React.FC = () => {
           </div>
         </div>
 
-        <div className={`p-6 rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-          <h3 className={`text-xl font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>What would you like to do next?</h3>
-          <div className="space-y-4">
-            <div className={getNextStepSuggestion() === 'Referral for imaging' ? 'p-4 border-2 border-sky-500 rounded-lg' : ''}>
-              <label className="flex items-center">
-                <input type="radio" name="nextStep" value="Referral for imaging" onChange={(e) => updateFormData({ nextStep: e.target.value })} className="form-radio h-4 w-4 text-sky-600 accent-sky-500 focus:ring-sky-500" />
-                <span className="ml-2">Referral for imaging (e.g., MRI, CT, X-ray)</span>
-              </label>
-              <ul className="list-disc list-inside pl-6 text-sm text-gray-600 dark:text-gray-400">
-                <li>You have not had imaging related to your condition</li>
-                <li>Your last imaging is older than 9 months</li>
-                <li>Your symptoms have changed or worsened since your last scan</li>
-                <li>You're experiencing new neurological symptoms (e.g., numbness, weakness)</li>
-              </ul>
-            </div>
-            <div className={getNextStepSuggestion() === 'Referral to Allied Health' ? 'p-4 border-2 border-sky-500 rounded-lg' : ''}>
-              <label className="flex items-center">
-                <input type="radio" name="nextStep" value="Referral to Allied Health" onChange={(e) => updateFormData({ nextStep: e.target.value })} className="form-radio h-4 w-4 text-sky-600 accent-sky-500 focus:ring-sky-500" />
-                <span className="ml-2">Referral to Allied Health (e.g., Physiotherapy, Exercise Physiology)</span>
-              </label>
-              <ul className="list-disc list-inside pl-6 text-sm text-gray-600 dark:text-gray-400">
-                <li>You are recovering from an injury or surgery</li>
-                <li>You have ongoing symptoms affecting mobility or function</li>
-                <li>You have not trialled conservative treatment like physiotherapy or rehab</li>
-                <li>You would like help managing your condition without surgery</li>
-              </ul>
-            </div>
-            <div className={getNextStepSuggestion() === 'Book a Specialist Appointment' ? 'p-4 border-2 border-sky-500 rounded-lg' : ''}>
-              <label className="flex items-center">
-                <input type="radio" name="nextStep" value="Book a Specialist Appointment" onChange={(e) => updateFormData({ nextStep: e.target.value })} className="form-radio h-4 w-4 text-sky-600 accent-sky-500 focus:ring-sky-500" />
-                <span className="ml-2">Book a Specialist Appointment</span>
-              </label>
-              <ul className="list-disc list-inside pl-6 text-sm text-gray-600 dark:text-gray-400">
-                <li>You've already had imaging and/or allied health support, but symptoms persist</li>
-                <li>You were referred by a GP or another specialist</li>
-                <li>Your condition is interfering with daily life or work</li>
-                <li>Your evaluation suggests possible surgical intervention or specialist care</li>
-              </ul>
-            </div>
-            <div className={getNextStepSuggestion() === 'No Immediate Action Needed' ? 'p-4 border-2 border-sky-500 rounded-lg' : ''}>
-              <label className="flex items-center">
-                <input type="radio" name="nextStep" value="No Immediate Action Needed" onChange={(e) => updateFormData({ nextStep: e.target.value })} className="form-radio h-4 w-4 text-sky-600 accent-sky-500 focus:ring-sky-500" />
-                <span className="ml-2">No Immediate Action Needed</span>
-              </label>
-              <ul className="list-disc list-inside pl-6 text-sm text-gray-600 dark:text-gray-400">
-                <li>You are just reviewing your results for now</li>
-                <li>You are already under care or awaiting treatment</li>
-                <li>You prefer to discuss next steps with your regular doctor first</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
         {/* MOVED STATUS MESSAGES HERE */}
         <div className="mt-6 space-y-2">
           {overallStatusMessage && (
